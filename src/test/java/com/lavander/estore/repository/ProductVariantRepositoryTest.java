@@ -6,6 +6,7 @@ import com.lavander.estore.model.ProductCategoryGroup;
 import com.lavander.estore.model.ProductVariant;
 import com.lavander.estore.model.PropertyDefinition;
 import com.lavander.estore.model.PropertyValue;
+import com.lavander.estore.model.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -13,6 +14,8 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,6 +43,9 @@ class ProductVariantRepositoryTest {
 
     @Autowired
     private PropertyValueRepository propertyValueRepository;
+
+    @Autowired
+    private TagRepository tagRepository;
 
     private Product createProduct() {
         ProductCategoryGroup electronics = groupRepository.save(new ProductCategoryGroup("Electronics"));
@@ -86,5 +92,24 @@ class ProductVariantRepositoryTest {
         ProductVariant reloaded = variantRepository.findById(xps13.getId()).orElseThrow();
         assertThat(reloaded.getVariantProperties()).isEmpty();
         assertThat(propertyValueRepository.findById(ramValue.getId())).isEmpty();
+    }
+
+    @Test
+    void findDistinctByTagsInReturnsEachMatchingVariantOnce() {
+        Product dell = createProduct();
+        Tag springSale = tagRepository.save(new Tag("Promotie Primavara"));
+        Tag under20 = tagRepository.save(new Tag("Produs sub 20 Lei"));
+
+        ProductVariant xps13 = new ProductVariant("Dell XPS 13", "13-inch laptop", dell,
+                new BigDecimal("4999.00"), 4);
+        xps13.setTags(Set.of(springSale, under20));
+        variantRepository.save(xps13);
+        entityManager.flush();
+        entityManager.clear();
+
+        List<ProductVariant> matches = variantRepository.findDistinctByTagsIn(List.of(springSale, under20));
+
+        assertThat(matches).hasSize(1);
+        assertThat(matches.get(0).getId()).isEqualTo(xps13.getId());
     }
 }

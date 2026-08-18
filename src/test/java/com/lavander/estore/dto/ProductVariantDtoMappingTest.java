@@ -5,6 +5,7 @@ import com.lavander.estore.model.ProductCategory;
 import com.lavander.estore.model.ProductVariant;
 import com.lavander.estore.model.PropertyDefinition;
 import com.lavander.estore.model.PropertyValue;
+import com.lavander.estore.model.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -58,5 +59,26 @@ class ProductVariantDtoMappingTest {
         assertThat(dto.variantProperties().get(0).propertyValue()).isEqualTo("16GB");
         assertThat(dto.price()).isEqualByComparingTo("4999.00");
         assertThat(dto.starRating()).isEqualTo(4);
+    }
+
+    @Test
+    void variantMapsTagsAndProductCategoryId() {
+        ProductCategory laptops = new ProductCategory("Laptops");
+        laptops.setId(10L);
+        Product dell = new Product("Dell", "Dell laptops", laptops);
+        dell.setId(1L);
+
+        Tag springSale = new Tag("Promotie Primavara");
+        springSale.setId(5L);
+
+        ProductVariant xps13 = new ProductVariant("Dell XPS 13", "13-inch laptop", dell,
+                new BigDecimal("4999.00"), 4);
+        xps13.setId(100L);
+        xps13.setTags(Set.of(springSale));
+
+        ProductVariantDto dto = ProductVariantDto.fromEntity(xps13);
+
+        assertThat(dto.product().categoryId()).isEqualTo(10L);
+        assertThat(dto.tags()).extracting(TagDto::tagName).containsExactly("Promotie Primavara");
     }
 }
