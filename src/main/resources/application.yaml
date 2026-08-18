@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: estore
+  datasource:
+    # Local default; on Railway, either SPRING_DATASOURCE_URL or the PG* vars from the PostgreSQL addon are used.
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5433}/${PGDATABASE:lavander}}
+    username: ${PGUSER:postgres}
+    password: ${PGPASSWORD:parola123}
+  jpa:
+    hibernate:
+      ddl-auto: update
+      show-sql: ${SPRING_JPA_SHOW_SQL:false}
