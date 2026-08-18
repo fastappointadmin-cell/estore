@@ -12,10 +12,12 @@ import com.lavander.estore.model.ProductCategory;
 import com.lavander.estore.model.ProductVariant;
 import com.lavander.estore.model.PropertyDefinition;
 import com.lavander.estore.model.PropertyValue;
+import com.lavander.estore.model.Tag;
 import com.lavander.estore.repository.ProductCategoryRepository;
 import com.lavander.estore.repository.ProductRepository;
 import com.lavander.estore.repository.ProductVariantRepository;
 import com.lavander.estore.repository.PropertyDefinitionRepository;
+import com.lavander.estore.repository.TagRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -29,16 +31,19 @@ public class ProductService {
     private final ProductVariantRepository productVariantRepository;
     private final ProductCategoryRepository productCategoryRepository;
     private final PropertyDefinitionRepository propertyDefinitionRepository;
+    private final TagRepository tagRepository;
 
     public ProductService(
             ProductRepository productRepository,
             ProductVariantRepository productVariantRepository,
             ProductCategoryRepository productCategoryRepository,
-            PropertyDefinitionRepository propertyDefinitionRepository) {
+            PropertyDefinitionRepository propertyDefinitionRepository,
+            TagRepository tagRepository) {
         this.productRepository = productRepository;
         this.productVariantRepository = productVariantRepository;
         this.productCategoryRepository = productCategoryRepository;
         this.propertyDefinitionRepository = propertyDefinitionRepository;
+        this.tagRepository = tagRepository;
     }
 
     // --- Product ---
@@ -113,6 +118,7 @@ public class ProductService {
         ProductVariant entity = new ProductVariant(
                 request.variantName(), request.variantDescription(), product, request.price(), request.starRating());
         applyVariantProperties(entity, request.variantProperties());
+        entity.setTags(resolveTags(request.tagIds()));
         return ProductVariantDto.fromEntity(productVariantRepository.save(entity));
     }
 
@@ -125,6 +131,7 @@ public class ProductService {
         entity.setStarRating(request.starRating());
         entity.getVariantProperties().clear();
         applyVariantProperties(entity, request.variantProperties());
+        entity.setTags(resolveTags(request.tagIds()));
         return ProductVariantDto.fromEntity(productVariantRepository.save(entity));
     }
 
@@ -139,6 +146,11 @@ public class ProductService {
                     .orElseThrow(() -> new NotFoundException("Property definition not found with id: " + input.propertyDefinitionId()));
             variant.addVariantProperty(new PropertyValue(propertyDefinition, input.value()));
         }
+    }
+
+    private Set<Tag> resolveTags(List<Long> ids) {
+        List<Long> safeIds = ids == null ? List.of() : ids;
+        return new HashSet<>(tagRepository.findAllById(safeIds));
     }
 
     private ProductVariant findVariantById(Long id) {
