@@ -51,6 +51,10 @@ public class ProductService {
         return productRepository.findByProductCategoryId(categoryId).stream().map(ProductDto::fromEntity).toList();
     }
 
+    public List<ProductDto> getAllProducts() {
+        return productRepository.findAll().stream().map(ProductDto::fromEntity).toList();
+    }
+
     public ProductDto createProduct(ProductRequest request) {
         ProductCategory category = findCategoryById(request.categoryId());
         Product entity = new Product(request.productName(), request.productDescription(), category);
@@ -94,6 +98,10 @@ public class ProductService {
 
     public List<ProductVariantDto> getProductVariantsByProductId(Long productId) {
         return productVariantRepository.findByProductId(productId).stream().map(ProductVariantDto::fromEntity).toList();
+    }
+
+    public List<ProductVariantDto> getAllVariants() {
+        return productVariantRepository.findAll().stream().map(ProductVariantDto::fromEntity).toList();
     }
 
     public ProductVariantDto getVariantById(Long id) {
