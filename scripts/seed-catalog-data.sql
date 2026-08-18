@@ -10,6 +10,10 @@
 BEGIN;
 
 TRUNCATE TABLE
+  variant_tag,
+  promotion_group_tag,
+  promotion_group,
+  tag,
   property_value,
   product_variant,
   product_extra_properties,
@@ -139,6 +143,24 @@ INSERT INTO property_value (id, variant_id, property_definition_id, property_val
   (26, 12, 2, '16 inch'),
   (27, 12, 3, 'M3 Pro');
 
+-- Tags
+INSERT INTO tag (id, tag_name) OVERRIDING SYSTEM VALUE VALUES
+  (1, 'Produs sub 20 Lei');
+
+-- Promotion groups
+INSERT INTO promotion_group (id, group_name) OVERRIDING SYSTEM VALUE VALUES
+  (1, 'Produse sub 20 Lei');
+
+-- Promotion group <-> tag (many-to-many)
+INSERT INTO promotion_group_tag (promotion_group_id, tag_id) VALUES
+  (1, 1);
+
+-- Variant <-> tag (many-to-many) — deliberately cross-category (Curatenie + Igiena)
+-- to prove a promotion pools variants that don't share a real category.
+INSERT INTO variant_tag (variant_id, tag_id) VALUES
+  (6, 1),  -- Domestos Pine Fresh, 15 Lei
+  (8, 1);  -- Alint Hartie Igienica Piersica, 10 Lei
+
 -- Re-align each identity sequence with the max explicit id inserted above,
 -- so the next application-generated insert doesn't collide.
 SELECT setval(pg_get_serial_sequence('property_definition', 'id'), (SELECT MAX(id) FROM property_definition));
@@ -148,5 +170,7 @@ SELECT setval(pg_get_serial_sequence('product_category', 'id'), (SELECT MAX(id) 
 SELECT setval(pg_get_serial_sequence('product', 'id'), (SELECT MAX(id) FROM product));
 SELECT setval(pg_get_serial_sequence('product_variant', 'id'), (SELECT MAX(id) FROM product_variant));
 SELECT setval(pg_get_serial_sequence('property_value', 'id'), (SELECT MAX(id) FROM property_value));
+SELECT setval(pg_get_serial_sequence('tag', 'id'), (SELECT MAX(id) FROM tag));
+SELECT setval(pg_get_serial_sequence('promotion_group', 'id'), (SELECT MAX(id) FROM promotion_group));
 
 COMMIT;
