@@ -1,6 +1,7 @@
 package com.lavander.estore.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -12,8 +13,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -29,7 +30,7 @@ public class Product {
 
     private String productDescription;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_category_id", nullable = false)
     private ProductCategory productCategory;
 
@@ -38,7 +39,7 @@ public class Product {
             name = "product_extra_properties",
             joinColumns = @JoinColumn(name = "product_id"),
             inverseJoinColumns = @JoinColumn(name = "property_definition_id"))
-    private List<PropertyDefinition> extraProperties = new ArrayList<>();
+    private Set<PropertyDefinition> extraProperties = new HashSet<>();
 
     public Product(String productName, String productDescription, ProductCategory productCategory) {
         this.productName = productName;

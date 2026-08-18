@@ -8,7 +8,7 @@ import com.lavander.estore.model.PropertyValue;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,7 +24,7 @@ class ProductVariantDtoMappingTest {
 
         Product apple = new Product("Apple", "Apple laptops", laptops);
         apple.setId(2L);
-        apple.setExtraProperties(List.of(chip));
+        apple.setExtraProperties(Set.of(chip));
 
         ProductDto dto = ProductDto.fromEntity(apple);
 

@@ -1,6 +1,8 @@
 package com.lavander.estore.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -26,8 +28,9 @@ public class ProductSubCategoryGroup {
 
     private String groupName;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_group_id", nullable = false)
+    @JsonIgnore
     private ProductCategoryGroup parentGroup;
 
     @OneToMany(mappedBy = "parentSubGroup")

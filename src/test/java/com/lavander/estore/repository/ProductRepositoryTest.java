@@ -10,7 +10,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 
-import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,7 +43,7 @@ class ProductRepositoryTest {
         PropertyDefinition chip = propertyDefinitionRepository.save(new PropertyDefinition("Chip"));
 
         Product apple = new Product("Apple", "Apple laptops", laptops);
-        apple.setExtraProperties(List.of(chip));
+        apple.setExtraProperties(Set.of(chip));
         productRepository.save(apple);
 
         entityManager.flush();

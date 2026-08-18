@@ -11,7 +11,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 
-import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -94,12 +94,12 @@ class ProductCategoryRepositoryTest {
 
         ProductCategory laptops = new ProductCategory("Laptops");
         laptops.setParentGroup(electronics);
-        laptops.setCategoryProperties(List.of(ram));
+        laptops.setCategoryProperties(Set.of(ram));
         categoryRepository.save(laptops);
 
         ProductCategory desktops = new ProductCategory("Desktops");
         desktops.setParentGroup(electronics);
-        desktops.setCategoryProperties(List.of(ram));
+        desktops.setCategoryProperties(Set.of(ram));
         categoryRepository.save(desktops);
 
         entityManager.flush();

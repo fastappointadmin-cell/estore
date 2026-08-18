@@ -7,6 +7,7 @@ import com.lavander.estore.model.PropertyDefinition;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,7 +30,7 @@ class CatalogTreeDtoMappingTest {
         ram.setId(1L);
         ProductCategory laptops = new ProductCategory("Laptops");
         laptops.setId(10L);
-        laptops.setCategoryProperties(List.of(ram));
+        laptops.setCategoryProperties(Set.of(ram));
 
         ProductCategoryDto dto = ProductCategoryDto.fromEntity(laptops);
 

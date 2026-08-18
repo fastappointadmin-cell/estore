@@ -1,6 +1,8 @@
 package com.lavander.estore.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -14,8 +16,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -29,12 +31,14 @@ public class ProductCategory {
 
     private String categoryName;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_group_id")
+    @JsonIgnore
     private ProductCategoryGroup parentGroup;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_subgroup_id")
+    @JsonIgnore
     private ProductSubCategoryGroup parentSubGroup;
 
     @ManyToMany
@@ -42,7 +46,7 @@ public class ProductCategory {
             name = "category_properties",
             joinColumns = @JoinColumn(name = "category_id"),
             inverseJoinColumns = @JoinColumn(name = "property_definition_id"))
-    private List<PropertyDefinition> categoryProperties = new ArrayList<>();
+    private Set<PropertyDefinition> categoryProperties = new HashSet<>();
 
     public ProductCategory(String categoryName) {
         this.categoryName = categoryName;
