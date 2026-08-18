@@ -11,6 +11,7 @@ public record ProductVariantDto(
         String variantDescription,
         ProductRefDto product,
         List<PropertyValueDto> variantProperties,
+        List<TagDto> tags,
         BigDecimal price,
         Integer starRating) {
 
@@ -18,12 +19,14 @@ public record ProductVariantDto(
         List<PropertyValueDto> variantProperties = entity.getVariantProperties().stream()
                 .map(PropertyValueDto::fromEntity)
                 .toList();
+        List<TagDto> tags = entity.getTags().stream().map(TagDto::fromEntity).toList();
         return new ProductVariantDto(
                 entity.getId(),
                 entity.getVariantName(),
                 entity.getVariantDescription(),
                 ProductRefDto.fromEntity(entity.getProduct()),
                 variantProperties,
+                tags,
                 entity.getPrice(),
                 entity.getStarRating());
     }

@@ -13,5 +13,6 @@ public record ProductVariantRequest(
         @NotNull Long productId,
         @NotNull BigDecimal price,
         @NotNull Integer starRating,
-        @Valid List<PropertyValueInput> variantProperties) {
+        @Valid List<PropertyValueInput> variantProperties,
+        List<Long> tagIds) {
 }
