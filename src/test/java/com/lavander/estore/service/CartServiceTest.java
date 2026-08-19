@@ -2,6 +2,8 @@ package com.lavander.estore.service;
 
 import com.lavander.estore.dto.AddCartItemRequest;
 import com.lavander.estore.dto.CartDto;
+import com.lavander.estore.dto.UpdateCartItemRequest;
+import com.lavander.estore.exception.NotFoundException;
 import com.lavander.estore.model.Cart;
 import com.lavander.estore.model.Product;
 import com.lavander.estore.model.ProductCategory;
@@ -27,6 +29,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -85,7 +88,12 @@ class CartServiceTest {
 
         assertThat(cart.getId()).isNotNull();
         assertThat(cart.getOwnerToken()).isNotBlank();
-        assertThat(response.getHeader(HttpHeaders.SET_COOKIE)).contains(cart.getOwnerToken());
+        assertThat(response.getHeader(HttpHeaders.SET_COOKIE))
+                .contains(cart.getOwnerToken())
+                .contains("HttpOnly")
+                .contains("Path=/")
+                .contains("SameSite=Lax")
+                .contains("Max-Age=");
     }
 
     @Test
@@ -141,5 +149,59 @@ class CartServiceTest {
 
         assertThat(productVariantRepository.findById(xps13.getId())).isEmpty();
         assertThat(cartItemRepository.findById(cartItemId)).isEmpty();
+    }
+
+    @Test
+    void updateItemQuantityPersistsTheNewQuantity() {
+        CartService cartService = new CartService(cartRepository, productVariantRepository);
+        ProductVariant xps13 = createVariant();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        CartDto afterAdd = cartService.addItem(null, response, new AddCartItemRequest(xps13.getId(), 1));
+        String token = cartRepository.findById(afterAdd.id()).orElseThrow().getOwnerToken();
+        Long itemId = afterAdd.items().get(0).id();
+        entityManager.flush();
+        entityManager.clear();
+
+        cartService.updateItemQuantity(token, response, itemId, new UpdateCartItemRequest(7));
+        entityManager.flush();
+        entityManager.clear();
+
+        Cart reloaded = cartRepository.findByOwnerToken(token).orElseThrow();
+        assertThat(reloaded.getItems()).hasSize(1);
+        assertThat(reloaded.getItems().get(0).getQuantity()).isEqualTo(7);
+    }
+
+    @Test
+    void removeItemDeletesItAndPersists() {
+        CartService cartService = new CartService(cartRepository, productVariantRepository);
+        ProductVariant xps13 = createVariant();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        CartDto afterAdd = cartService.addItem(null, response, new AddCartItemRequest(xps13.getId(), 1));
+        String token = cartRepository.findById(afterAdd.id()).orElseThrow().getOwnerToken();
+        Long itemId = afterAdd.items().get(0).id();
+        entityManager.flush();
+        entityManager.clear();
+
+        cartService.removeItem(token, response, itemId);
+        entityManager.flush();
+        entityManager.clear();
+
+        Cart reloaded = cartRepository.findByOwnerToken(token).orElseThrow();
+        assertThat(reloaded.getItems()).isEmpty();
+    }
+
+    @Test
+    void updatingAnItemIdFromAnotherCartThrowsNotFound() {
+        CartService cartService = new CartService(cartRepository, productVariantRepository);
+        ProductVariant xps13 = createVariant();
+        MockHttpServletResponse firstResponse = new MockHttpServletResponse();
+        CartDto firstCart = cartService.addItem(null, firstResponse, new AddCartItemRequest(xps13.getId(), 1));
+        Long itemIdInFirstCart = firstCart.items().get(0).id();
+
+        MockHttpServletResponse secondResponse = new MockHttpServletResponse();
+        Cart secondCart = cartService.resolveCart(null, secondResponse);
+
+        assertThatThrownBy(() -> cartService.updateItemQuantity(secondCart.getOwnerToken(), secondResponse, itemIdInFirstCart, new UpdateCartItemRequest(5)))
+                .isInstanceOf(NotFoundException.class);
     }
 }
