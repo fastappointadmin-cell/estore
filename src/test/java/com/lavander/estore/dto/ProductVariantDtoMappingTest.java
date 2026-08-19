@@ -5,10 +5,12 @@ import com.lavander.estore.model.ProductCategory;
 import com.lavander.estore.model.ProductVariant;
 import com.lavander.estore.model.PropertyDefinition;
 import com.lavander.estore.model.PropertyValue;
+import com.lavander.estore.model.Review;
 import com.lavander.estore.model.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,7 +49,7 @@ class ProductVariantDtoMappingTest {
         ram.setId(1L);
 
         ProductVariant xps13 = new ProductVariant("Dell XPS 13", "13-inch laptop", dell,
-                new BigDecimal("4999.00"), 4);
+                new BigDecimal("4999.00"));
         xps13.setId(100L);
         xps13.addVariantProperty(new PropertyValue(ram, "16GB"));
 
@@ -58,7 +60,6 @@ class ProductVariantDtoMappingTest {
         assertThat(dto.variantProperties()).hasSize(1);
         assertThat(dto.variantProperties().get(0).propertyValue()).isEqualTo("16GB");
         assertThat(dto.price()).isEqualByComparingTo("4999.00");
-        assertThat(dto.starRating()).isEqualTo(4);
     }
 
     @Test
@@ -72,7 +73,7 @@ class ProductVariantDtoMappingTest {
         springSale.setId(5L);
 
         ProductVariant xps13 = new ProductVariant("Dell XPS 13", "13-inch laptop", dell,
-                new BigDecimal("4999.00"), 4);
+                new BigDecimal("4999.00"));
         xps13.setId(100L);
         xps13.setTags(Set.of(springSale));
 
@@ -80,5 +81,40 @@ class ProductVariantDtoMappingTest {
 
         assertThat(dto.product().categoryId()).isEqualTo(10L);
         assertThat(dto.tags()).extracting(TagDto::tagName).containsExactly("Promotie Primavara");
+    }
+
+    @Test
+    void variantWithNoReviewsMapsToZeroRatingAndZeroCount() {
+        ProductCategory laptops = new ProductCategory("Laptops");
+        laptops.setId(10L);
+        Product dell = new Product("Dell", "Dell laptops", laptops);
+        dell.setId(1L);
+
+        ProductVariant xps13 = new ProductVariant("Dell XPS 13", "13-inch laptop", dell,
+                new BigDecimal("4999.00"));
+        xps13.setId(100L);
+
+        ProductVariantDto dto = ProductVariantDto.fromEntity(xps13);
+
+        assertThat(dto.starRating()).isEqualTo(0.0);
+        assertThat(dto.reviewCount()).isEqualTo(0);
+    }
+
+    @Test
+    void variantWithReviewsMapsToAverageRatingAndCount() {
+        ProductCategory laptops = new ProductCategory("Laptops");
+        laptops.setId(10L);
+        Product dell = new Product("Dell", "Dell laptops", laptops);
+        dell.setId(1L);
+
+        ProductVariant xps13 = new ProductVariant("Dell XPS 13", "13-inch laptop", dell,
+                new BigDecimal("4999.00"));
+        xps13.setId(100L);
+        xps13.setReviews(List.of(new Review(xps13, 3), new Review(xps13, 5)));
+
+        ProductVariantDto dto = ProductVariantDto.fromEntity(xps13);
+
+        assertThat(dto.starRating()).isEqualTo(4.0);
+        assertThat(dto.reviewCount()).isEqualTo(2);
     }
 }

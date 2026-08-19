@@ -6,6 +6,7 @@ import com.lavander.estore.model.ProductCategoryGroup;
 import com.lavander.estore.model.ProductVariant;
 import com.lavander.estore.model.PropertyDefinition;
 import com.lavander.estore.model.PropertyValue;
+import com.lavander.estore.model.Review;
 import com.lavander.estore.model.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,9 @@ class ProductVariantRepositoryTest {
     @Autowired
     private TagRepository tagRepository;
 
+    @Autowired
+    private ReviewRepository reviewRepository;
+
     private Product createProduct() {
         ProductCategoryGroup electronics = groupRepository.save(new ProductCategoryGroup("Electronics"));
         ProductCategory laptops = new ProductCategory("Laptops");
@@ -61,7 +65,7 @@ class ProductVariantRepositoryTest {
         PropertyDefinition ram = propertyDefinitionRepository.save(new PropertyDefinition("RAM"));
 
         ProductVariant xps13 = new ProductVariant("Dell XPS 13", "13-inch laptop", dell,
-                new BigDecimal("4999.00"), 4);
+                new BigDecimal("4999.00"));
         xps13.addVariantProperty(new PropertyValue(ram, "16GB"));
 
         variantRepository.save(xps13);
@@ -79,7 +83,7 @@ class ProductVariantRepositoryTest {
         PropertyDefinition ram = propertyDefinitionRepository.save(new PropertyDefinition("RAM"));
 
         ProductVariant xps13 = new ProductVariant("Dell XPS 13", "13-inch laptop", dell,
-                new BigDecimal("4999.00"), 4);
+                new BigDecimal("4999.00"));
         PropertyValue ramValue = new PropertyValue(ram, "16GB");
         xps13.addVariantProperty(ramValue);
         variantRepository.save(xps13);
@@ -101,7 +105,7 @@ class ProductVariantRepositoryTest {
         Tag under20 = tagRepository.save(new Tag("Produs sub 20 Lei"));
 
         ProductVariant xps13 = new ProductVariant("Dell XPS 13", "13-inch laptop", dell,
-                new BigDecimal("4999.00"), 4);
+                new BigDecimal("4999.00"));
         xps13.setTags(Set.of(springSale, under20));
         variantRepository.save(xps13);
         entityManager.flush();
@@ -111,5 +115,23 @@ class ProductVariantRepositoryTest {
 
         assertThat(matches).hasSize(1);
         assertThat(matches.get(0).getId()).isEqualTo(xps13.getId());
+    }
+
+    @Test
+    void reviewsSavedForAVariantAreVisibleAfterReload() {
+        Product dell = createProduct();
+        ProductVariant xps13 = new ProductVariant("Dell XPS 13", "13-inch laptop", dell,
+                new BigDecimal("4999.00"));
+        variantRepository.save(xps13);
+        entityManager.flush();
+
+        reviewRepository.save(new Review(xps13, 4));
+        reviewRepository.save(new Review(xps13, 2));
+        entityManager.flush();
+        entityManager.clear();
+
+        ProductVariant reloaded = variantRepository.findById(xps13.getId()).orElseThrow();
+        assertThat(reloaded.getReviews()).hasSize(2);
+        assertThat(reloaded.getReviews()).extracting(Review::getRating).containsExactlyInAnyOrder(4, 2);
     }
 }
