@@ -15,6 +15,7 @@ import com.lavander.estore.model.PropertyDefinition;
 import com.lavander.estore.model.PropertyValue;
 import com.lavander.estore.model.Review;
 import com.lavander.estore.model.Tag;
+import com.lavander.estore.repository.CartItemRepository;
 import com.lavander.estore.repository.ProductCategoryRepository;
 import com.lavander.estore.repository.ProductRepository;
 import com.lavander.estore.repository.ProductVariantRepository;
@@ -36,6 +37,7 @@ public class ProductService {
     private final PropertyDefinitionRepository propertyDefinitionRepository;
     private final TagRepository tagRepository;
     private final ReviewRepository reviewRepository;
+    private final CartItemRepository cartItemRepository;
 
     public ProductService(
             ProductRepository productRepository,
@@ -43,13 +45,15 @@ public class ProductService {
             ProductCategoryRepository productCategoryRepository,
             PropertyDefinitionRepository propertyDefinitionRepository,
             TagRepository tagRepository,
-            ReviewRepository reviewRepository) {
+            ReviewRepository reviewRepository,
+            CartItemRepository cartItemRepository) {
         this.productRepository = productRepository;
         this.productVariantRepository = productVariantRepository;
         this.productCategoryRepository = productCategoryRepository;
         this.propertyDefinitionRepository = propertyDefinitionRepository;
         this.tagRepository = tagRepository;
         this.reviewRepository = reviewRepository;
+        this.cartItemRepository = cartItemRepository;
     }
 
     // --- Product ---
@@ -141,7 +145,9 @@ public class ProductService {
     }
 
     public void deleteVariant(Long id) {
-        productVariantRepository.delete(findVariantById(id));
+        ProductVariant variant = findVariantById(id);
+        cartItemRepository.deleteByVariantId(id);
+        productVariantRepository.delete(variant);
     }
 
     public ProductVariantDto submitReview(Long variantId, ReviewRequest request) {
