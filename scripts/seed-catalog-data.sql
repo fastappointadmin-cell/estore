@@ -10,6 +10,7 @@
 BEGIN;
 
 TRUNCATE TABLE
+  review,
   variant_tag,
   promotion_group_tag,
   promotion_group,
@@ -99,19 +100,19 @@ INSERT INTO product_extra_properties (product_id, property_definition_id) VALUES
   (2, 3);
 
 -- Product variants
-INSERT INTO product_variant (id, variant_name, variant_description, product_id, price, star_rating) OVERRIDING SYSTEM VALUE VALUES
-  (1, 'Dell XPS 13', '13-inch Dell XPS laptop', 1, 4999, 4),
-  (2, 'MacBook Pro 14', '14-inch MacBook Pro', 2, 9999, 5),
-  (3, 'Lenovo ThinkPad X1', '14-inch Lenovo ThinkPad X1 Carbon', 3, 6499, 4),
-  (4, 'Ariel Detergent Lichid Alpine', 'Detergent lichid pentru rufe Ariel', 4, 65, 4),
-  (5, 'Lenor Perle Parfumate Spring Awakening', 'Balsam de rufe Lenor', 5, 25, 5),
-  (6, 'Domestos Pine Fresh', 'Dezinfectant si odorizant WC Domestos', 6, 15, 4),
-  (7, 'Blend-a-med 3D White Clinical Miracle Glow', 'Pasta de dinti Blend-a-med', 7, 12, 5),
-  (8, 'Alint Hartie Igienica Piersica', 'Hartie igienica Alint', 8, 10, 3),
-  (9, 'Pantene Pro-V Miracles Lift & Volume', 'Sampon Pantene', 9, 22, 4),
-  (10, 'MacBook Pro 16 (24GB)', '16-inch MacBook Pro, 24GB RAM', 2, 14999, 5),
-  (11, 'Ariel Detergent Lichid Alpine XXL', 'Detergent lichid pentru rufe Ariel, format XXL', 4, 110, 4),
-  (12, 'MacBook Pro 16', '16-inch MacBook Pro', 2, 12999, 5);
+INSERT INTO product_variant (id, variant_name, variant_description, product_id, price) OVERRIDING SYSTEM VALUE VALUES
+  (1, 'Dell XPS 13', '13-inch Dell XPS laptop', 1, 4999),
+  (2, 'MacBook Pro 14', '14-inch MacBook Pro', 2, 9999),
+  (3, 'Lenovo ThinkPad X1', '14-inch Lenovo ThinkPad X1 Carbon', 3, 6499),
+  (4, 'Ariel Detergent Lichid Alpine', 'Detergent lichid pentru rufe Ariel', 4, 65),
+  (5, 'Lenor Perle Parfumate Spring Awakening', 'Balsam de rufe Lenor', 5, 25),
+  (6, 'Domestos Pine Fresh', 'Dezinfectant si odorizant WC Domestos', 6, 15),
+  (7, 'Blend-a-med 3D White Clinical Miracle Glow', 'Pasta de dinti Blend-a-med', 7, 12),
+  (8, 'Alint Hartie Igienica Piersica', 'Hartie igienica Alint', 8, 10),
+  (9, 'Pantene Pro-V Miracles Lift & Volume', 'Sampon Pantene', 9, 22),
+  (10, 'MacBook Pro 16 (24GB)', '16-inch MacBook Pro, 24GB RAM', 2, 14999),
+  (11, 'Ariel Detergent Lichid Alpine XXL', 'Detergent lichid pentru rufe Ariel, format XXL', 4, 110),
+  (12, 'MacBook Pro 16', '16-inch MacBook Pro', 2, 12999);
 
 -- Variant property values
 INSERT INTO property_value (id, variant_id, property_definition_id, property_value) OVERRIDING SYSTEM VALUE VALUES
@@ -143,6 +144,22 @@ INSERT INTO property_value (id, variant_id, property_definition_id, property_val
   (26, 12, 2, '16 inch'),
   (27, 12, 3, 'M3 Pro');
 
+-- Reviews (one per variant, seeded from each variant's old static rating so the
+-- site's initial display is unchanged even though the mechanism is now real)
+INSERT INTO review (id, variant_id, rating) OVERRIDING SYSTEM VALUE VALUES
+  (1, 1, 4),
+  (2, 2, 5),
+  (3, 3, 4),
+  (4, 4, 4),
+  (5, 5, 5),
+  (6, 6, 4),
+  (7, 7, 5),
+  (8, 8, 3),
+  (9, 9, 4),
+  (10, 10, 5),
+  (11, 11, 4),
+  (12, 12, 5);
+
 -- Tags
 INSERT INTO tag (id, tag_name) OVERRIDING SYSTEM VALUE VALUES
   (1, 'Produs sub 20 Lei');
@@ -170,6 +187,7 @@ SELECT setval(pg_get_serial_sequence('product_category', 'id'), (SELECT MAX(id) 
 SELECT setval(pg_get_serial_sequence('product', 'id'), (SELECT MAX(id) FROM product));
 SELECT setval(pg_get_serial_sequence('product_variant', 'id'), (SELECT MAX(id) FROM product_variant));
 SELECT setval(pg_get_serial_sequence('property_value', 'id'), (SELECT MAX(id) FROM property_value));
+SELECT setval(pg_get_serial_sequence('review', 'id'), (SELECT MAX(id) FROM review));
 SELECT setval(pg_get_serial_sequence('tag', 'id'), (SELECT MAX(id) FROM tag));
 SELECT setval(pg_get_serial_sequence('promotion_group', 'id'), (SELECT MAX(id) FROM promotion_group));
 
