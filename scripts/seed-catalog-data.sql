@@ -26,7 +26,9 @@ TRUNCATE TABLE
   property_definition
 RESTART IDENTITY CASCADE;
 
--- Property definitions
+-- Property definitions. One row per distinct property name: property_definition
+-- is a standalone entity shared across categories via the category_properties
+-- many-to-many join table below, not a per-category copy.
 INSERT INTO property_definition (id, property_name) OVERRIDING SYSTEM VALUE VALUES
   (1, 'RAM'),
   (2, 'Screen Size'),
@@ -34,15 +36,9 @@ INSERT INTO property_definition (id, property_name) OVERRIDING SYSTEM VALUE VALU
   (4, 'Tip'),
   (5, 'Cantitate'),
   (6, 'Parfum'),
-  (7, 'Cantitate'),
-  (8, 'Tip'),
-  (9, 'Parfum'),
-  (10, 'Tip Produs'),
-  (11, 'Cantitate'),
-  (12, 'Numar Role'),
-  (13, 'Numar Straturi'),
-  (14, 'Tip Produs'),
-  (15, 'Cantitate');
+  (7, 'Tip Produs'),
+  (8, 'Numar Role'),
+  (9, 'Numar Straturi');
 
 -- Top-level category groups
 INSERT INTO product_category_group (id, group_name) OVERRIDING SYSTEM VALUE VALUES
@@ -65,22 +61,23 @@ INSERT INTO product_category (id, category_name, parent_group_id, parent_subgrou
   (6, 'Hartie Igienica', 5, NULL),
   (7, 'Cosmetice', 5, NULL);
 
--- Category <-> property definition (many-to-many)
+-- Category <-> property definition (many-to-many). Categories that use the
+-- same property (e.g. "Cantitate") share the one property_definition row.
 INSERT INTO category_properties (category_id, property_definition_id) VALUES
-  (1, 1),  -- Laptops: RAM
-  (1, 2),  -- Laptops: Screen Size
-  (2, 4),  -- Detergenti: Tip
-  (2, 5),  -- Detergenti: Cantitate
-  (3, 6),  -- Balsam Rufe: Parfum
-  (3, 7),  -- Balsam Rufe: Cantitate
-  (4, 8),  -- Odorizant WC: Tip
-  (4, 9),  -- Odorizant WC: Parfum
-  (5, 10), -- Igiena Orala: Tip Produs
-  (5, 11), -- Igiena Orala: Cantitate
-  (6, 12), -- Hartie Igienica: Numar Role
-  (6, 13), -- Hartie Igienica: Numar Straturi
-  (7, 14), -- Cosmetice: Tip Produs
-  (7, 15); -- Cosmetice: Cantitate
+  (1, 1), -- Laptops: RAM
+  (1, 2), -- Laptops: Screen Size
+  (2, 4), -- Detergenti: Tip
+  (2, 5), -- Detergenti: Cantitate
+  (3, 6), -- Balsam Rufe: Parfum
+  (3, 5), -- Balsam Rufe: Cantitate
+  (4, 4), -- Odorizant WC: Tip
+  (4, 6), -- Odorizant WC: Parfum
+  (5, 7), -- Igiena Orala: Tip Produs
+  (5, 5), -- Igiena Orala: Cantitate
+  (6, 8), -- Hartie Igienica: Numar Role
+  (6, 9), -- Hartie Igienica: Numar Straturi
+  (7, 7), -- Cosmetice: Tip Produs
+  (7, 5); -- Cosmetice: Cantitate
 
 -- Products
 INSERT INTO product (id, product_name, product_description, product_category_id) OVERRIDING SYSTEM VALUE VALUES
@@ -126,15 +123,15 @@ INSERT INTO property_value (id, variant_id, property_definition_id, property_val
   (8, 4, 4, 'Lichid'),
   (9, 4, 5, '3.6L'),
   (10, 5, 6, 'Spring Awakening'),
-  (11, 5, 7, '140 g'),
-  (12, 6, 8, 'Gel'),
-  (13, 6, 9, 'Pine Fresh'),
-  (14, 7, 10, 'Pasta de Dinti'),
-  (15, 7, 11, '75ml'),
-  (16, 8, 12, '8 Role'),
-  (17, 8, 13, '3 Straturi'),
-  (18, 9, 14, 'Sampon'),
-  (19, 9, 15, '300 ml'),
+  (11, 5, 5, '140 g'),
+  (12, 6, 4, 'Gel'),
+  (13, 6, 6, 'Pine Fresh'),
+  (14, 7, 7, 'Pasta de Dinti'),
+  (15, 7, 5, '75ml'),
+  (16, 8, 8, '8 Role'),
+  (17, 8, 9, '3 Straturi'),
+  (18, 9, 7, 'Sampon'),
+  (19, 9, 5, '300 ml'),
   (20, 10, 1, '24GB'),
   (21, 10, 2, '16 inch'),
   (22, 10, 3, 'M3 Pro'),
