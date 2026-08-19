@@ -49,17 +49,16 @@ public class ProductVariant {
             inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<Tag> tags = new HashSet<>();
 
+    @OneToMany(mappedBy = "variant")
+    private List<Review> reviews = new ArrayList<>();
+
     private BigDecimal price;
 
-    private Integer starRating;
-
-    public ProductVariant(String variantName, String variantDescription, Product product,
-                           BigDecimal price, Integer starRating) {
+    public ProductVariant(String variantName, String variantDescription, Product product, BigDecimal price) {
         this.variantName = variantName;
         this.variantDescription = variantDescription;
         this.product = product;
         this.price = price;
-        this.starRating = starRating;
     }
 
     public void addVariantProperty(PropertyValue propertyValue) {

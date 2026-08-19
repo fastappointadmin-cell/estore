@@ -12,7 +12,6 @@ public record ProductVariantRequest(
         String variantDescription,
         @NotNull Long productId,
         @NotNull BigDecimal price,
-        @NotNull Integer starRating,
         @Valid List<PropertyValueInput> variantProperties,
         List<Long> tagIds) {
 }

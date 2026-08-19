@@ -1,6 +1,7 @@
 package com.lavander.estore.dto;
 
 import com.lavander.estore.model.ProductVariant;
+import com.lavander.estore.model.Review;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -13,13 +14,18 @@ public record ProductVariantDto(
         List<PropertyValueDto> variantProperties,
         List<TagDto> tags,
         BigDecimal price,
-        Integer starRating) {
+        Double starRating,
+        Integer reviewCount) {
 
     public static ProductVariantDto fromEntity(ProductVariant entity) {
         List<PropertyValueDto> variantProperties = entity.getVariantProperties().stream()
                 .map(PropertyValueDto::fromEntity)
                 .toList();
         List<TagDto> tags = entity.getTags().stream().map(TagDto::fromEntity).toList();
+        List<Review> reviews = entity.getReviews();
+        double averageRating = reviews.isEmpty()
+                ? 0.0
+                : reviews.stream().mapToInt(Review::getRating).average().orElse(0.0);
         return new ProductVariantDto(
                 entity.getId(),
                 entity.getVariantName(),
@@ -28,6 +34,7 @@ public record ProductVariantDto(
                 variantProperties,
                 tags,
                 entity.getPrice(),
-                entity.getStarRating());
+                averageRating,
+                reviews.size());
     }
 }

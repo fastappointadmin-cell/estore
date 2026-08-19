@@ -4,6 +4,7 @@ import com.lavander.estore.dto.ProductDto;
 import com.lavander.estore.dto.ProductRequest;
 import com.lavander.estore.dto.ProductVariantDto;
 import com.lavander.estore.dto.ProductVariantRequest;
+import com.lavander.estore.dto.ReviewRequest;
 import com.lavander.estore.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -88,5 +89,10 @@ public class ProductController {
     public ResponseEntity<Void> deleteVariant(@PathVariable Long id) {
         productService.deleteVariant(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/variants/{id}/reviews")
+    public ResponseEntity<ProductVariantDto> submitReview(@PathVariable Long id, @Valid @RequestBody ReviewRequest request) {
+        return ResponseEntity.ok(productService.submitReview(id, request));
     }
 }

@@ -5,6 +5,7 @@ import com.lavander.estore.dto.ProductRequest;
 import com.lavander.estore.dto.ProductVariantDto;
 import com.lavander.estore.dto.ProductVariantRequest;
 import com.lavander.estore.dto.PropertyValueInput;
+import com.lavander.estore.dto.ReviewRequest;
 import com.lavander.estore.exception.ConflictException;
 import com.lavander.estore.exception.NotFoundException;
 import com.lavander.estore.model.Product;
@@ -12,11 +13,13 @@ import com.lavander.estore.model.ProductCategory;
 import com.lavander.estore.model.ProductVariant;
 import com.lavander.estore.model.PropertyDefinition;
 import com.lavander.estore.model.PropertyValue;
+import com.lavander.estore.model.Review;
 import com.lavander.estore.model.Tag;
 import com.lavander.estore.repository.ProductCategoryRepository;
 import com.lavander.estore.repository.ProductRepository;
 import com.lavander.estore.repository.ProductVariantRepository;
 import com.lavander.estore.repository.PropertyDefinitionRepository;
+import com.lavander.estore.repository.ReviewRepository;
 import com.lavander.estore.repository.TagRepository;
 import org.springframework.stereotype.Service;
 
@@ -32,18 +35,21 @@ public class ProductService {
     private final ProductCategoryRepository productCategoryRepository;
     private final PropertyDefinitionRepository propertyDefinitionRepository;
     private final TagRepository tagRepository;
+    private final ReviewRepository reviewRepository;
 
     public ProductService(
             ProductRepository productRepository,
             ProductVariantRepository productVariantRepository,
             ProductCategoryRepository productCategoryRepository,
             PropertyDefinitionRepository propertyDefinitionRepository,
-            TagRepository tagRepository) {
+            TagRepository tagRepository,
+            ReviewRepository reviewRepository) {
         this.productRepository = productRepository;
         this.productVariantRepository = productVariantRepository;
         this.productCategoryRepository = productCategoryRepository;
         this.propertyDefinitionRepository = propertyDefinitionRepository;
         this.tagRepository = tagRepository;
+        this.reviewRepository = reviewRepository;
     }
 
     // --- Product ---
@@ -116,7 +122,7 @@ public class ProductService {
     public ProductVariantDto createVariant(ProductVariantRequest request) {
         Product product = findProductById(request.productId());
         ProductVariant entity = new ProductVariant(
-                request.variantName(), request.variantDescription(), product, request.price(), request.starRating());
+                request.variantName(), request.variantDescription(), product, request.price());
         applyVariantProperties(entity, request.variantProperties());
         entity.setTags(resolveTags(request.tagIds()));
         return ProductVariantDto.fromEntity(productVariantRepository.save(entity));
@@ -128,7 +134,6 @@ public class ProductService {
         entity.setVariantDescription(request.variantDescription());
         entity.setProduct(findProductById(request.productId()));
         entity.setPrice(request.price());
-        entity.setStarRating(request.starRating());
         entity.getVariantProperties().clear();
         applyVariantProperties(entity, request.variantProperties());
         entity.setTags(resolveTags(request.tagIds()));
@@ -137,6 +142,13 @@ public class ProductService {
 
     public void deleteVariant(Long id) {
         productVariantRepository.delete(findVariantById(id));
+    }
+
+    public ProductVariantDto submitReview(Long variantId, ReviewRequest request) {
+        ProductVariant variant = findVariantById(variantId);
+        Review review = reviewRepository.save(new Review(variant, request.rating()));
+        variant.getReviews().add(review);
+        return ProductVariantDto.fromEntity(variant);
     }
 
     private void applyVariantProperties(ProductVariant variant, List<PropertyValueInput> inputs) {
