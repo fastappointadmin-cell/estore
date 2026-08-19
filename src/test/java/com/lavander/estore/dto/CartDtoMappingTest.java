@@ -34,6 +34,7 @@ class CartDtoMappingTest {
         CartDto dto = CartDto.fromEntity(cart);
 
         assertThat(dto.id()).isEqualTo(5L);
+        assertThat(dto.ownerToken()).isEqualTo("token-abc");
         assertThat(dto.items()).hasSize(1);
         assertThat(dto.items().get(0).id()).isEqualTo(50L);
         assertThat(dto.items().get(0).quantity()).isEqualTo(3);

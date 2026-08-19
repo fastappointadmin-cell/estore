@@ -23,8 +23,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
-import org.springframework.http.HttpHeaders;
-import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.math.BigDecimal;
 
@@ -80,46 +78,35 @@ class CartServiceTest {
     }
 
     @Test
-    void resolveCartCreatesANewCartAndSetsTheCookieWhenNoTokenGiven() {
+    void resolveCartCreatesANewCartWhenNoTokenGiven() {
         CartService cartService = new CartService(cartRepository, productVariantRepository);
-        MockHttpServletResponse response = new MockHttpServletResponse();
 
-        Cart cart = cartService.resolveCart(null, response);
+        Cart cart = cartService.resolveCart(null);
 
         assertThat(cart.getId()).isNotNull();
         assertThat(cart.getOwnerToken()).isNotBlank();
-        assertThat(response.getHeader(HttpHeaders.SET_COOKIE))
-                .contains(cart.getOwnerToken())
-                .contains("HttpOnly")
-                .contains("Path=/")
-                .contains("SameSite=Lax")
-                .contains("Max-Age=");
     }
 
     @Test
     void resolveCartReturnsTheSameCartWhenTokenMatchesAnExistingOne() {
         CartService cartService = new CartService(cartRepository, productVariantRepository);
-        MockHttpServletResponse firstResponse = new MockHttpServletResponse();
-        Cart created = cartService.resolveCart(null, firstResponse);
+        Cart created = cartService.resolveCart(null);
         entityManager.flush();
         entityManager.clear();
 
-        MockHttpServletResponse secondResponse = new MockHttpServletResponse();
-        Cart resolved = cartService.resolveCart(created.getOwnerToken(), secondResponse);
+        Cart resolved = cartService.resolveCart(created.getOwnerToken());
 
         assertThat(resolved.getId()).isEqualTo(created.getId());
-        assertThat(secondResponse.getHeader(HttpHeaders.SET_COOKIE)).isNull();
     }
 
     @Test
     void addItemIncrementsQuantityWhenVariantAlreadyInCart() {
         CartService cartService = new CartService(cartRepository, productVariantRepository);
         ProductVariant xps13 = createVariant();
-        MockHttpServletResponse response = new MockHttpServletResponse();
 
-        CartDto afterFirst = cartService.addItem(null, response, new AddCartItemRequest(xps13.getId(), 1));
-        String token = cartRepository.findById(afterFirst.id()).orElseThrow().getOwnerToken();
-        CartDto afterSecond = cartService.addItem(token, response, new AddCartItemRequest(xps13.getId(), 2));
+        CartDto afterFirst = cartService.addItem(null, new AddCartItemRequest(xps13.getId(), 1));
+        String token = afterFirst.ownerToken();
+        CartDto afterSecond = cartService.addItem(token, new AddCartItemRequest(xps13.getId(), 2));
 
         assertThat(afterSecond.items()).hasSize(1);
         assertThat(afterSecond.items().get(0).quantity()).isEqualTo(3);
@@ -137,8 +124,7 @@ class CartServiceTest {
                 cartItemRepository);
         CartService cartService = new CartService(cartRepository, productVariantRepository);
         ProductVariant xps13 = createVariant();
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        CartDto afterAdd = cartService.addItem(null, response, new AddCartItemRequest(xps13.getId(), 1));
+        CartDto afterAdd = cartService.addItem(null, new AddCartItemRequest(xps13.getId(), 1));
         Long cartItemId = afterAdd.items().get(0).id();
         entityManager.flush();
         entityManager.clear();
@@ -155,14 +141,13 @@ class CartServiceTest {
     void updateItemQuantityPersistsTheNewQuantity() {
         CartService cartService = new CartService(cartRepository, productVariantRepository);
         ProductVariant xps13 = createVariant();
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        CartDto afterAdd = cartService.addItem(null, response, new AddCartItemRequest(xps13.getId(), 1));
-        String token = cartRepository.findById(afterAdd.id()).orElseThrow().getOwnerToken();
+        CartDto afterAdd = cartService.addItem(null, new AddCartItemRequest(xps13.getId(), 1));
+        String token = afterAdd.ownerToken();
         Long itemId = afterAdd.items().get(0).id();
         entityManager.flush();
         entityManager.clear();
 
-        cartService.updateItemQuantity(token, response, itemId, new UpdateCartItemRequest(7));
+        cartService.updateItemQuantity(token, itemId, new UpdateCartItemRequest(7));
         entityManager.flush();
         entityManager.clear();
 
@@ -175,14 +160,13 @@ class CartServiceTest {
     void removeItemDeletesItAndPersists() {
         CartService cartService = new CartService(cartRepository, productVariantRepository);
         ProductVariant xps13 = createVariant();
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        CartDto afterAdd = cartService.addItem(null, response, new AddCartItemRequest(xps13.getId(), 1));
-        String token = cartRepository.findById(afterAdd.id()).orElseThrow().getOwnerToken();
+        CartDto afterAdd = cartService.addItem(null, new AddCartItemRequest(xps13.getId(), 1));
+        String token = afterAdd.ownerToken();
         Long itemId = afterAdd.items().get(0).id();
         entityManager.flush();
         entityManager.clear();
 
-        cartService.removeItem(token, response, itemId);
+        cartService.removeItem(token, itemId);
         entityManager.flush();
         entityManager.clear();
 
@@ -194,14 +178,12 @@ class CartServiceTest {
     void updatingAnItemIdFromAnotherCartThrowsNotFound() {
         CartService cartService = new CartService(cartRepository, productVariantRepository);
         ProductVariant xps13 = createVariant();
-        MockHttpServletResponse firstResponse = new MockHttpServletResponse();
-        CartDto firstCart = cartService.addItem(null, firstResponse, new AddCartItemRequest(xps13.getId(), 1));
+        CartDto firstCart = cartService.addItem(null, new AddCartItemRequest(xps13.getId(), 1));
         Long itemIdInFirstCart = firstCart.items().get(0).id();
 
-        MockHttpServletResponse secondResponse = new MockHttpServletResponse();
-        Cart secondCart = cartService.resolveCart(null, secondResponse);
+        Cart secondCart = cartService.resolveCart(null);
 
-        assertThatThrownBy(() -> cartService.updateItemQuantity(secondCart.getOwnerToken(), secondResponse, itemIdInFirstCart, new UpdateCartItemRequest(5)))
+        assertThatThrownBy(() -> cartService.updateItemQuantity(secondCart.getOwnerToken(), itemIdInFirstCart, new UpdateCartItemRequest(5)))
                 .isInstanceOf(NotFoundException.class);
     }
 }

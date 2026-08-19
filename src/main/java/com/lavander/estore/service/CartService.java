@@ -9,9 +9,6 @@ import com.lavander.estore.model.CartItem;
 import com.lavander.estore.model.ProductVariant;
 import com.lavander.estore.repository.CartRepository;
 import com.lavander.estore.repository.ProductVariantRepository;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -19,9 +16,6 @@ import java.util.UUID;
 
 @Service
 public class CartService {
-
-    private static final String CART_COOKIE_NAME = "cart_token";
-    private static final int CART_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
     private final CartRepository cartRepository;
     private final ProductVariantRepository productVariantRepository;
@@ -31,25 +25,28 @@ public class CartService {
         this.productVariantRepository = productVariantRepository;
     }
 
-    public Cart resolveCart(String cartToken, HttpServletResponse response) {
+    /**
+     * Frontend and backend live on different origins (different Railway subdomains), so a
+     * cart-identifying cookie would be a third-party cookie and gets silently dropped by
+     * modern browsers. The cart token is instead handed to the client in the response body
+     * and echoed back as a request header on later calls.
+     */
+    public Cart resolveCart(String cartToken) {
         if (cartToken != null) {
             Optional<Cart> existing = cartRepository.findByOwnerToken(cartToken);
             if (existing.isPresent()) {
                 return existing.get();
             }
         }
-        String newToken = UUID.randomUUID().toString();
-        Cart cart = cartRepository.save(new Cart(newToken));
-        setCartCookie(response, newToken);
-        return cart;
+        return cartRepository.save(new Cart(UUID.randomUUID().toString()));
     }
 
-    public CartDto getCart(String cartToken, HttpServletResponse response) {
-        return CartDto.fromEntity(resolveCart(cartToken, response));
+    public CartDto getCart(String cartToken) {
+        return CartDto.fromEntity(resolveCart(cartToken));
     }
 
-    public CartDto addItem(String cartToken, HttpServletResponse response, AddCartItemRequest request) {
-        Cart cart = resolveCart(cartToken, response);
+    public CartDto addItem(String cartToken, AddCartItemRequest request) {
+        Cart cart = resolveCart(cartToken);
         ProductVariant variant = productVariantRepository.findById(request.variantId())
                 .orElseThrow(() -> new NotFoundException("Product variant not found with id: " + request.variantId()));
 
@@ -66,14 +63,14 @@ public class CartService {
         return CartDto.fromEntity(cartRepository.save(cart));
     }
 
-    public CartDto updateItemQuantity(String cartToken, HttpServletResponse response, Long itemId, UpdateCartItemRequest request) {
-        Cart cart = resolveCart(cartToken, response);
+    public CartDto updateItemQuantity(String cartToken, Long itemId, UpdateCartItemRequest request) {
+        Cart cart = resolveCart(cartToken);
         findItemInCart(cart, itemId).setQuantity(request.quantity());
         return CartDto.fromEntity(cartRepository.save(cart));
     }
 
-    public CartDto removeItem(String cartToken, HttpServletResponse response, Long itemId) {
-        Cart cart = resolveCart(cartToken, response);
+    public CartDto removeItem(String cartToken, Long itemId) {
+        Cart cart = resolveCart(cartToken);
         cart.getItems().remove(findItemInCart(cart, itemId));
         return CartDto.fromEntity(cartRepository.save(cart));
     }
@@ -83,15 +80,5 @@ public class CartService {
                 .filter(item -> item.getId().equals(itemId))
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Cart item not found with id: " + itemId));
-    }
-
-    private void setCartCookie(HttpServletResponse response, String token) {
-        ResponseCookie cookie = ResponseCookie.from(CART_COOKIE_NAME, token)
-                .httpOnly(true)
-                .path("/")
-                .maxAge(CART_COOKIE_MAX_AGE_SECONDS)
-                .sameSite("Lax")
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }
