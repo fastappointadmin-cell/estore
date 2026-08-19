@@ -19,4 +19,10 @@ public record ProductCategoryGroupDto(
                 .toList();
         return new ProductCategoryGroupDto(entity.getId(), entity.getGroupName(), subGroups, categories);
     }
+
+    public static List<ProductCategoryGroupDto> fromEntities(List<ProductCategoryGroup> all) {
+        return all.stream()
+                .map(ProductCategoryGroupDto::fromEntity)
+                .toList();
+    }
 }
