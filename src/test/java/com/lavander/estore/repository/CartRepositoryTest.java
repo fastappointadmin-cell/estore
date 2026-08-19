@@ -53,7 +53,8 @@ class CartRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        assertThat(cartRepository.findByOwnerToken("token-123")).contains(cart);
+        assertThat(cartRepository.findByOwnerToken("token-123")).isPresent();
+        assertThat(cartRepository.findByOwnerToken("token-123").orElseThrow().getId()).isEqualTo(cart.getId());
         assertThat(cartRepository.findByOwnerToken("missing-token")).isEmpty();
     }
 
