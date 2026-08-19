@@ -23,6 +23,7 @@ import com.lavander.estore.repository.PropertyDefinitionRepository;
 import com.lavander.estore.repository.ReviewRepository;
 import com.lavander.estore.repository.TagRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -144,6 +145,7 @@ public class ProductService {
         return ProductVariantDto.fromEntity(productVariantRepository.save(entity));
     }
 
+    @Transactional
     public void deleteVariant(Long id) {
         ProductVariant variant = findVariantById(id);
         cartItemRepository.deleteByVariantId(id);
