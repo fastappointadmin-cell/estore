@@ -134,4 +134,27 @@ class ProductVariantRepositoryTest {
         assertThat(reloaded.getReviews()).hasSize(2);
         assertThat(reloaded.getReviews()).extracting(Review::getRating).containsExactlyInAnyOrder(4, 2);
     }
+
+    @Test
+    void deletingVariantWithReviewsCascadesAndDoesNotThrow() {
+        Product dell = createProduct();
+        ProductVariant xps13 = new ProductVariant("Dell XPS 13", "13-inch laptop", dell,
+                new BigDecimal("4999.00"));
+        variantRepository.save(xps13);
+        entityManager.flush();
+
+        Review firstReview = reviewRepository.save(new Review(xps13, 4));
+        Review secondReview = reviewRepository.save(new Review(xps13, 2));
+        entityManager.flush();
+        entityManager.clear();
+
+        ProductVariant reloaded = variantRepository.findById(xps13.getId()).orElseThrow();
+        variantRepository.delete(reloaded);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(variantRepository.findById(xps13.getId())).isEmpty();
+        assertThat(reviewRepository.findById(firstReview.getId())).isEmpty();
+        assertThat(reviewRepository.findById(secondReview.getId())).isEmpty();
+    }
 }
