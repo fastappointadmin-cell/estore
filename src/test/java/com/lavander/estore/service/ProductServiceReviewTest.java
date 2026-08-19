@@ -7,6 +7,7 @@ import com.lavander.estore.model.ProductCategory;
 import com.lavander.estore.model.ProductCategoryGroup;
 import com.lavander.estore.model.ProductVariant;
 import com.lavander.estore.model.Review;
+import com.lavander.estore.repository.CartItemRepository;
 import com.lavander.estore.repository.ProductCategoryGroupRepository;
 import com.lavander.estore.repository.ProductCategoryRepository;
 import com.lavander.estore.repository.ProductRepository;
@@ -52,6 +53,9 @@ class ProductServiceReviewTest {
     @Autowired
     private ReviewRepository reviewRepository;
 
+    @Autowired
+    private CartItemRepository cartItemRepository;
+
     private ProductService productService;
 
     private ProductVariant createVariant() {
@@ -76,7 +80,8 @@ class ProductServiceReviewTest {
                 productCategoryRepository,
                 propertyDefinitionRepository,
                 tagRepository,
-                reviewRepository);
+                reviewRepository,
+                cartItemRepository);
 
         ProductVariant xps13 = createVariant();
         Long variantId = xps13.getId();
