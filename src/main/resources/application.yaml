@@ -13,3 +13,14 @@ spring:
     hibernate:
       ddl-auto: update
       show-sql: ${SPRING_JPA_SHOW_SQL:false}
+
+# Local defaults below are insecure placeholders. On Railway, set JWT_SECRET,
+# ADMIN_EMAIL, and ADMIN_PASSWORD as real environment variables.
+jwt:
+  secret: ${JWT_SECRET:dev-only-insecure-secret-change-this-on-railway-32-bytes-min}
+  expiration-ms: ${JWT_EXPIRATION_MS:604800000}
+
+app:
+  admin:
+    email: ${ADMIN_EMAIL:admin@lavander.local}
+    password: ${ADMIN_PASSWORD:admin123}
