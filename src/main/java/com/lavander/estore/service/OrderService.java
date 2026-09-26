@@ -2,13 +2,16 @@ package com.lavander.estore.service;
 
 import com.lavander.estore.dto.OrderDto;
 import com.lavander.estore.dto.OrderRequest;
+import com.lavander.estore.exception.UnauthorizedException;
 import com.lavander.estore.model.Cart;
 import com.lavander.estore.model.DeliveryMethod;
 import com.lavander.estore.model.Order;
 import com.lavander.estore.model.OrderItem;
 import com.lavander.estore.model.OrderStatus;
+import com.lavander.estore.model.User;
 import com.lavander.estore.repository.CartRepository;
 import com.lavander.estore.repository.OrderRepository;
+import com.lavander.estore.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,14 +24,16 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
+    private final UserRepository userRepository;
 
-    public OrderService(OrderRepository orderRepository, CartRepository cartRepository) {
+    public OrderService(OrderRepository orderRepository, CartRepository cartRepository, UserRepository userRepository) {
         this.orderRepository = orderRepository;
         this.cartRepository = cartRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional
-    public OrderDto placeOrder(String cartToken, OrderRequest request) {
+    public OrderDto placeOrder(String userEmail, String cartToken, OrderRequest request) {
         Cart cart = (cartToken != null ? cartRepository.findByOwnerToken(cartToken) : Optional.<Cart>empty())
                 .orElseThrow(() -> new IllegalArgumentException("Cannot place an order without a cart"));
         if (cart.getItems().isEmpty()) {
@@ -43,6 +48,7 @@ public class OrderService {
         BigDecimal total = subtotal.add(shippingCost).subtract(discountAmount);
 
         Order order = new Order();
+        order.setUserId(resolveUserId(userEmail));
         order.setCustomerFullName(request.customerFullName());
         order.setCustomerPhone(request.customerPhone());
         order.setCustomerEmail(request.customerEmail());
@@ -75,6 +81,22 @@ public class OrderService {
         cartRepository.save(cart);
 
         return OrderDto.fromEntity(saved);
+    }
+
+    public List<OrderDto> getMyOrders(String userEmail) {
+        Long userId = resolveUserId(userEmail);
+        if (userId == null) {
+            throw new UnauthorizedException("Must be logged in to view order history");
+        }
+        return orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(OrderDto::fromEntity)
+                .toList();
+    }
+
+    private Long resolveUserId(String userEmail) {
+        return userEmail != null
+                ? userRepository.findByEmail(userEmail).map(User::getId).orElse(null)
+                : null;
     }
 
     // Placeholder: free shipping regardless of subtotal or delivery method. This is the

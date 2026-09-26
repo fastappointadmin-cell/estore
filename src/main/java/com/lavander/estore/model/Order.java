@@ -31,6 +31,9 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Set only when the customer was logged in at checkout — anonymous checkout stays supported. */
+    private Long userId;
+
     private String customerFullName;
     private String customerPhone;
     private String customerEmail;

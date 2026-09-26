@@ -2,6 +2,7 @@ package com.lavander.estore.service;
 
 import com.lavander.estore.dto.OrderDto;
 import com.lavander.estore.dto.OrderRequest;
+import com.lavander.estore.exception.UnauthorizedException;
 import com.lavander.estore.model.Cart;
 import com.lavander.estore.model.CartItem;
 import com.lavander.estore.model.DeliveryMethod;
@@ -10,12 +11,15 @@ import com.lavander.estore.model.Product;
 import com.lavander.estore.model.ProductCategory;
 import com.lavander.estore.model.ProductCategoryGroup;
 import com.lavander.estore.model.ProductVariant;
+import com.lavander.estore.model.Role;
+import com.lavander.estore.model.User;
 import com.lavander.estore.repository.CartRepository;
 import com.lavander.estore.repository.OrderRepository;
 import com.lavander.estore.repository.ProductCategoryGroupRepository;
 import com.lavander.estore.repository.ProductCategoryRepository;
 import com.lavander.estore.repository.ProductRepository;
 import com.lavander.estore.repository.ProductVariantRepository;
+import com.lavander.estore.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -53,6 +57,13 @@ class OrderServiceTest {
     @Autowired
     private ProductCategoryGroupRepository productCategoryGroupRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private OrderService newOrderService() {
+        return new OrderService(orderRepository, cartRepository, userRepository);
+    }
+
     private ProductVariant createVariant(String name, String price) {
         ProductCategoryGroup electronics = productCategoryGroupRepository.save(new ProductCategoryGroup("Electronics"));
         ProductCategory laptops = new ProductCategory("Laptops");
@@ -75,6 +86,13 @@ class OrderServiceTest {
         return cartRepository.findById(cart.getId()).orElseThrow();
     }
 
+    private String createUser() {
+        String email = "user-" + UUID.randomUUID() + "@example.com";
+        userRepository.save(new User(email, "hash", "Test User", Role.USER));
+        entityManager.flush();
+        return email;
+    }
+
     private OrderRequest sampleRequest() {
         return new OrderRequest(
                 "Ion Popescu",
@@ -93,9 +111,9 @@ class OrderServiceTest {
     void placeOrderComputesSubtotalFromCartItemsAndSnapshotsThem() {
         ProductVariant xps13 = createVariant("Dell XPS 13", "4999.00");
         Cart cart = createCartWithItem(xps13, 2);
-        OrderService orderService = new OrderService(orderRepository, cartRepository);
+        OrderService orderService = newOrderService();
 
-        OrderDto order = orderService.placeOrder(cart.getOwnerToken(), sampleRequest());
+        OrderDto order = orderService.placeOrder(null, cart.getOwnerToken(), sampleRequest());
 
         assertThat(order.subtotal()).isEqualByComparingTo("9998.00");
         assertThat(order.shippingCost()).isEqualByComparingTo(BigDecimal.ZERO);
@@ -110,9 +128,9 @@ class OrderServiceTest {
     void placeOrderClearsTheCartAfterwards() {
         ProductVariant xps13 = createVariant("Dell XPS 13", "4999.00");
         Cart cart = createCartWithItem(xps13, 1);
-        OrderService orderService = new OrderService(orderRepository, cartRepository);
+        OrderService orderService = newOrderService();
 
-        orderService.placeOrder(cart.getOwnerToken(), sampleRequest());
+        orderService.placeOrder(null, cart.getOwnerToken(), sampleRequest());
         entityManager.flush();
         entityManager.clear();
 
@@ -123,17 +141,69 @@ class OrderServiceTest {
     @Test
     void placeOrderWithEmptyCartThrows() {
         Cart cart = cartRepository.save(new Cart(UUID.randomUUID().toString()));
-        OrderService orderService = new OrderService(orderRepository, cartRepository);
+        OrderService orderService = newOrderService();
 
-        assertThatThrownBy(() -> orderService.placeOrder(cart.getOwnerToken(), sampleRequest()))
+        assertThatThrownBy(() -> orderService.placeOrder(null, cart.getOwnerToken(), sampleRequest()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void placeOrderWithUnknownCartTokenThrows() {
-        OrderService orderService = new OrderService(orderRepository, cartRepository);
+        OrderService orderService = newOrderService();
 
-        assertThatThrownBy(() -> orderService.placeOrder("does-not-exist", sampleRequest()))
+        assertThatThrownBy(() -> orderService.placeOrder(null, "does-not-exist", sampleRequest()))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void placeOrderLinksTheOrderToTheLoggedInUser() {
+        ProductVariant xps13 = createVariant("Dell XPS 13", "4999.00");
+        Cart cart = createCartWithItem(xps13, 1);
+        String email = createUser();
+        OrderService orderService = newOrderService();
+
+        orderService.placeOrder(email, cart.getOwnerToken(), sampleRequest());
+
+        var myOrders = orderService.getMyOrders(email);
+        assertThat(myOrders).hasSize(1);
+    }
+
+    @Test
+    void getMyOrdersOnlyReturnsThatUsersOrdersMostRecentFirst() {
+        ProductVariant xps13 = createVariant("Dell XPS 13", "4999.00");
+        String emailA = createUser();
+        String emailB = createUser();
+        OrderService orderService = newOrderService();
+
+        Cart cartA1 = createCartWithItem(xps13, 1);
+        orderService.placeOrder(emailA, cartA1.getOwnerToken(), sampleRequest());
+        Cart cartA2 = createCartWithItem(xps13, 1);
+        OrderDto secondOrderForA = orderService.placeOrder(emailA, cartA2.getOwnerToken(), sampleRequest());
+        Cart cartB = createCartWithItem(xps13, 1);
+        orderService.placeOrder(emailB, cartB.getOwnerToken(), sampleRequest());
+
+        var ordersForA = orderService.getMyOrders(emailA);
+
+        assertThat(ordersForA).hasSize(2);
+        assertThat(ordersForA.get(0).id()).isEqualTo(secondOrderForA.id());
+    }
+
+    @Test
+    void getMyOrdersWithNoLoggedInUserThrowsUnauthorized() {
+        OrderService orderService = newOrderService();
+
+        assertThatThrownBy(() -> orderService.getMyOrders(null))
+                .isInstanceOf(UnauthorizedException.class);
+    }
+
+    @Test
+    void placeOrderWithoutLoginLeavesTheOrderUnlinked() {
+        ProductVariant xps13 = createVariant("Dell XPS 13", "4999.00");
+        Cart cart = createCartWithItem(xps13, 1);
+        OrderService orderService = newOrderService();
+
+        OrderDto order = orderService.placeOrder(null, cart.getOwnerToken(), sampleRequest());
+
+        assertThat(orderRepository.findById(order.id()).orElseThrow().getUserId()).isNull();
     }
 }
