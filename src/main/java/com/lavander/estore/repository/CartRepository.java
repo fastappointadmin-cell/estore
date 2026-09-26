@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface CartRepository extends JpaRepository<Cart, Long> {
     Optional<Cart> findByOwnerToken(String ownerToken);
+
+    Optional<Cart> findByUserId(Long userId);
 }
