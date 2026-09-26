@@ -1,8 +1,10 @@
 package com.lavander.estore.service;
 
 import com.lavander.estore.dto.AuthResponse;
+import com.lavander.estore.dto.ChangePasswordRequest;
 import com.lavander.estore.dto.LoginRequest;
 import com.lavander.estore.dto.RegisterRequest;
+import com.lavander.estore.dto.UpdateProfileRequest;
 import com.lavander.estore.dto.UserDto;
 import com.lavander.estore.exception.ConflictException;
 import com.lavander.estore.exception.NotFoundException;
@@ -48,6 +50,29 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User not found"));
         return UserDto.fromEntity(user);
+    }
+
+    public UserDto updateProfile(String email, UpdateProfileRequest request) {
+        User user = requireUser(email);
+        user.setFullName(request.fullName());
+        return UserDto.fromEntity(userRepository.save(user));
+    }
+
+    public void changePassword(String email, ChangePasswordRequest request) {
+        User user = requireUser(email);
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new UnauthorizedException("Current password is incorrect");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+    }
+
+    private User requireUser(String email) {
+        if (email == null) {
+            throw new UnauthorizedException("Must be logged in");
+        }
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException("Must be logged in"));
     }
 
     private AuthResponse toAuthResponse(User user) {

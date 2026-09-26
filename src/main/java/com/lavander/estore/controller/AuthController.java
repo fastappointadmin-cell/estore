@@ -1,8 +1,10 @@
 package com.lavander.estore.controller;
 
 import com.lavander.estore.dto.AuthResponse;
+import com.lavander.estore.dto.ChangePasswordRequest;
 import com.lavander.estore.dto.LoginRequest;
 import com.lavander.estore.dto.RegisterRequest;
+import com.lavander.estore.dto.UpdateProfileRequest;
 import com.lavander.estore.dto.UserDto;
 import com.lavander.estore.service.AuthService;
 import jakarta.validation.Valid;
@@ -10,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,5 +40,16 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserDto> getCurrentUser(Authentication authentication) {
         return ResponseEntity.ok(authService.getCurrentUser(authentication.getName()));
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<UserDto> updateProfile(Authentication authentication, @Valid @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(authService.updateProfile(authentication.getName(), request));
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<Void> changePassword(Authentication authentication, @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(authentication.getName(), request);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -1,8 +1,10 @@
 package com.lavander.estore.service;
 
 import com.lavander.estore.dto.AuthResponse;
+import com.lavander.estore.dto.ChangePasswordRequest;
 import com.lavander.estore.dto.LoginRequest;
 import com.lavander.estore.dto.RegisterRequest;
+import com.lavander.estore.dto.UpdateProfileRequest;
 import com.lavander.estore.exception.ConflictException;
 import com.lavander.estore.exception.UnauthorizedException;
 import com.lavander.estore.model.Role;
@@ -102,5 +104,40 @@ class AuthServiceTest {
 
         assertThat(userDto.email()).isEqualTo(email);
         assertThat(userDto.fullName()).isEqualTo("Ion Popescu");
+    }
+
+    @Test
+    void updateProfileChangesTheFullName() {
+        AuthService authService = newAuthService();
+        String email = uniqueEmail();
+        authService.register(new RegisterRequest(email, "parola123", "Ion Popescu"));
+
+        var updated = authService.updateProfile(email, new UpdateProfileRequest("Ion M. Popescu"));
+
+        assertThat(updated.fullName()).isEqualTo("Ion M. Popescu");
+        assertThat(authService.getCurrentUser(email).fullName()).isEqualTo("Ion M. Popescu");
+    }
+
+    @Test
+    void changePasswordWithCorrectCurrentPasswordAllowsLoginWithNewPassword() {
+        AuthService authService = newAuthService();
+        String email = uniqueEmail();
+        authService.register(new RegisterRequest(email, "parola123", "Ion Popescu"));
+
+        authService.changePassword(email, new ChangePasswordRequest("parola123", "parolaNoua123"));
+
+        assertThatThrownBy(() -> authService.login(new LoginRequest(email, "parola123")))
+                .isInstanceOf(UnauthorizedException.class);
+        assertThat(authService.login(new LoginRequest(email, "parolaNoua123")).user().email()).isEqualTo(email);
+    }
+
+    @Test
+    void changePasswordWithWrongCurrentPasswordThrowsUnauthorized() {
+        AuthService authService = newAuthService();
+        String email = uniqueEmail();
+        authService.register(new RegisterRequest(email, "parola123", "Ion Popescu"));
+
+        assertThatThrownBy(() -> authService.changePassword(email, new ChangePasswordRequest("wrong-password", "parolaNoua123")))
+                .isInstanceOf(UnauthorizedException.class);
     }
 }
