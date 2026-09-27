@@ -52,6 +52,9 @@ public class ProductVariant {
     @OneToMany(mappedBy = "variant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Review> reviews = new ArrayList<>();
 
+    @OneToMany(mappedBy = "variant", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<VariantImage> images = new ArrayList<>();
+
     private BigDecimal price;
 
     public ProductVariant(String variantName, String variantDescription, Product product, BigDecimal price) {

@@ -3,8 +3,10 @@ package com.lavander.estore.controller;
 import com.lavander.estore.dto.ProductDto;
 import com.lavander.estore.dto.ProductRequest;
 import com.lavander.estore.dto.ProductVariantDto;
+import com.lavander.estore.dto.AttachBucketImageRequest;
 import com.lavander.estore.dto.ProductVariantRequest;
 import com.lavander.estore.dto.ReviewRequest;
+import com.lavander.estore.service.ImageStorageService;
 import com.lavander.estore.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +17,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -89,6 +93,28 @@ public class ProductController {
     public ResponseEntity<Void> deleteVariant(@PathVariable Long id) {
         productService.deleteVariant(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/variants/{id}/images")
+    public ResponseEntity<ProductVariantDto> addVariantImage(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(productService.addVariantImage(id, file));
+    }
+
+    @DeleteMapping("/variants/{id}/images/{imageId}")
+    public ResponseEntity<Void> deleteVariantImage(@PathVariable Long id, @PathVariable Long imageId) {
+        productService.deleteVariantImage(id, imageId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/variants/images/browse")
+    public ResponseEntity<List<ImageStorageService.BrowsedImage>> browseBucketImages() {
+        return ResponseEntity.ok(productService.listBucketImages());
+    }
+
+    @PostMapping("/variants/{id}/images/from-bucket")
+    public ResponseEntity<ProductVariantDto> attachVariantImageFromBucket(
+            @PathVariable Long id, @Valid @RequestBody AttachBucketImageRequest request) {
+        return ResponseEntity.ok(productService.attachVariantImageFromBucket(id, request.thumbnailKey()));
     }
 
     @PostMapping("/variants/{id}/reviews")

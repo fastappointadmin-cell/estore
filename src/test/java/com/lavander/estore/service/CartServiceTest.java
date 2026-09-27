@@ -21,6 +21,7 @@ import com.lavander.estore.repository.PropertyDefinitionRepository;
 import com.lavander.estore.repository.ReviewRepository;
 import com.lavander.estore.repository.TagRepository;
 import com.lavander.estore.repository.UserRepository;
+import com.lavander.estore.repository.VariantImageRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -69,6 +70,9 @@ class CartServiceTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private VariantImageRepository variantImageRepository;
 
     private CartService newCartService() {
         return new CartService(cartRepository, productVariantRepository, userRepository);
@@ -142,7 +146,9 @@ class CartServiceTest {
                 propertyDefinitionRepository,
                 tagRepository,
                 reviewRepository,
-                cartItemRepository);
+                cartItemRepository,
+                variantImageRepository,
+                new ImageStorageService(null, "test-bucket", "https://test.example.com"));
         CartService cartService = newCartService();
         ProductVariant xps13 = createVariant();
         CartDto afterAdd = cartService.addItem(null, null, new AddCartItemRequest(xps13.getId(), 1));

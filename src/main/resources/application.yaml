@@ -13,6 +13,10 @@ spring:
     hibernate:
       ddl-auto: update
       show-sql: ${SPRING_JPA_SHOW_SQL:false}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 # Local defaults below are insecure placeholders. On Railway, set JWT_SECRET,
 # ADMIN_EMAIL, and ADMIN_PASSWORD as real environment variables.
@@ -24,3 +28,12 @@ app:
   admin:
     email: ${ADMIN_EMAIL:admin@lavander.local}
     password: ${ADMIN_PASSWORD:admin123}
+
+# No local-dev default: image upload simply fails closed until real R2
+# credentials are set (locally and on Railway) via these env vars.
+r2:
+  account-id: ${R2_ACCOUNT_ID:}
+  access-key-id: ${R2_ACCESS_KEY_ID:}
+  secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+  bucket: ${R2_BUCKET:lavander}
+  public-base-url: ${R2_PUBLIC_BASE_URL:}

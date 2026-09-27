@@ -15,6 +15,7 @@ import com.lavander.estore.model.PropertyDefinition;
 import com.lavander.estore.model.PropertyValue;
 import com.lavander.estore.model.Review;
 import com.lavander.estore.model.Tag;
+import com.lavander.estore.model.VariantImage;
 import com.lavander.estore.repository.CartItemRepository;
 import com.lavander.estore.repository.ProductCategoryRepository;
 import com.lavander.estore.repository.ProductRepository;
@@ -22,8 +23,10 @@ import com.lavander.estore.repository.ProductVariantRepository;
 import com.lavander.estore.repository.PropertyDefinitionRepository;
 import com.lavander.estore.repository.ReviewRepository;
 import com.lavander.estore.repository.TagRepository;
+import com.lavander.estore.repository.VariantImageRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashSet;
 import java.util.List;
@@ -39,6 +42,8 @@ public class ProductService {
     private final TagRepository tagRepository;
     private final ReviewRepository reviewRepository;
     private final CartItemRepository cartItemRepository;
+    private final VariantImageRepository variantImageRepository;
+    private final ImageStorageService imageStorageService;
 
     public ProductService(
             ProductRepository productRepository,
@@ -47,7 +52,9 @@ public class ProductService {
             PropertyDefinitionRepository propertyDefinitionRepository,
             TagRepository tagRepository,
             ReviewRepository reviewRepository,
-            CartItemRepository cartItemRepository) {
+            CartItemRepository cartItemRepository,
+            VariantImageRepository variantImageRepository,
+            ImageStorageService imageStorageService) {
         this.productRepository = productRepository;
         this.productVariantRepository = productVariantRepository;
         this.productCategoryRepository = productCategoryRepository;
@@ -55,6 +62,8 @@ public class ProductService {
         this.tagRepository = tagRepository;
         this.reviewRepository = reviewRepository;
         this.cartItemRepository = cartItemRepository;
+        this.variantImageRepository = variantImageRepository;
+        this.imageStorageService = imageStorageService;
     }
 
     // --- Product ---
@@ -150,6 +159,40 @@ public class ProductService {
         ProductVariant variant = findVariantById(id);
         cartItemRepository.deleteByVariantId(id);
         productVariantRepository.delete(variant);
+    }
+
+    public ProductVariantDto addVariantImage(Long variantId, MultipartFile file) {
+        ProductVariant variant = findVariantById(variantId);
+        return attachImage(variant, imageStorageService.upload(variantId, file));
+    }
+
+    public List<ImageStorageService.BrowsedImage> listBucketImages() {
+        return imageStorageService.listImages();
+    }
+
+    public ProductVariantDto attachVariantImageFromBucket(Long variantId, String thumbnailKey) {
+        ProductVariant variant = findVariantById(variantId);
+        return attachImage(variant, imageStorageService.attachExisting(thumbnailKey));
+    }
+
+    private ProductVariantDto attachImage(ProductVariant variant, ImageStorageService.UploadedImage uploaded) {
+        int displayOrder = variantImageRepository.countByVariantId(variant.getId());
+        VariantImage image = new VariantImage(
+                variant,
+                uploaded.thumbnailUrl(),
+                uploaded.mediumUrl(),
+                uploaded.thumbnailKey(),
+                uploaded.mediumKey(),
+                displayOrder);
+        variant.getImages().add(variantImageRepository.save(image));
+        return ProductVariantDto.fromEntity(variant);
+    }
+
+    public void deleteVariantImage(Long variantId, Long imageId) {
+        VariantImage image = variantImageRepository.findByIdAndVariantId(imageId, variantId)
+                .orElseThrow(() -> new NotFoundException("Image not found with id: " + imageId));
+        imageStorageService.delete(image.getThumbnailKey(), image.getMediumKey());
+        variantImageRepository.delete(image);
     }
 
     public ProductVariantDto submitReview(Long variantId, ReviewRequest request) {

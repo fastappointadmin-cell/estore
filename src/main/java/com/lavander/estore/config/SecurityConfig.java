@@ -63,6 +63,9 @@ public class SecurityConfig {
                         // check and overwrites the real status with a second one.
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+                        // Lists every image ever uploaded to the bucket — declared before the
+                        // broad GET permitAll below, or it would inherit that public access.
+                        .requestMatchers(HttpMethod.GET, "/api/products/variants/images/browse").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET,
                                 "/api/products/**", "/api/product-categories/**",
                                 "/api/promotion-groups/**", "/api/property-definitions/**", "/api/tags/**")
