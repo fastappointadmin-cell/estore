@@ -41,6 +41,8 @@ public class PromotionGroupService {
 
     public PromotionGroupDto create(PromotionGroupRequest request) {
         PromotionGroup entity = new PromotionGroup(request.groupName());
+        entity.setDescription(request.description());
+        entity.setFeatured(request.featured());
         entity.setTags(resolveTags(request.tagIds()));
         return PromotionGroupDto.fromEntity(promotionGroupRepository.save(entity));
     }
@@ -48,6 +50,8 @@ public class PromotionGroupService {
     public PromotionGroupDto update(Long id, PromotionGroupRequest request) {
         PromotionGroup entity = findEntityById(id);
         entity.setGroupName(request.groupName());
+        entity.setDescription(request.description());
+        entity.setFeatured(request.featured());
         entity.setTags(resolveTags(request.tagIds()));
         return PromotionGroupDto.fromEntity(promotionGroupRepository.save(entity));
     }

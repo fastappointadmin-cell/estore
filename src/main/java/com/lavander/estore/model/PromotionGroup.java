@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import org.hibernate.annotations.ColumnDefault;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,6 +26,14 @@ public class PromotionGroup {
     private Long id;
 
     private String groupName;
+
+    private String description;
+
+    // Any number of groups can be featured at once — the site banner cycles through
+    // all of them. Explicit default so `ddl-auto: update` can add this NOT NULL column
+    // to a table that already has rows.
+    @ColumnDefault("false")
+    private boolean featured;
 
     @ManyToMany
     @JoinTable(
