@@ -28,6 +28,8 @@ public class ProductSubCategoryGroup {
 
     private String groupName;
 
+    private String icon;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_group_id", nullable = false)
     @JsonIgnore

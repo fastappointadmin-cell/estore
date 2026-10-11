@@ -24,6 +24,8 @@ public class ProductCategoryGroup {
 
     private String groupName;
 
+    private String icon;
+
     @OneToMany(mappedBy = "parentGroup")
     private List<ProductSubCategoryGroup> subGroups = new ArrayList<>();
 

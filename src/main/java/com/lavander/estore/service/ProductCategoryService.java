@@ -109,12 +109,14 @@ public class ProductCategoryService {
 
     public ProductCategoryGroupDto createGroup(ProductCategoryGroupRequest request) {
         ProductCategoryGroup entity = new ProductCategoryGroup(request.groupName());
+        entity.setIcon(request.icon());
         return ProductCategoryGroupDto.fromEntity(categoryGroupRepository.save(entity));
     }
 
     public ProductCategoryGroupDto updateGroup(Long id, ProductCategoryGroupRequest request) {
         ProductCategoryGroup entity = findGroupById(id);
         entity.setGroupName(request.groupName());
+        entity.setIcon(request.icon());
         return ProductCategoryGroupDto.fromEntity(categoryGroupRepository.save(entity));
     }
 
@@ -143,12 +145,14 @@ public class ProductCategoryService {
     public ProductSubCategoryGroupDto createSubGroup(ProductSubCategoryGroupRequest request) {
         ProductCategoryGroup parentGroup = findGroupById(request.parentGroupId());
         ProductSubCategoryGroup entity = new ProductSubCategoryGroup(request.groupName(), parentGroup);
+        entity.setIcon(request.icon());
         return ProductSubCategoryGroupDto.fromEntity(subCategoryGroupRepository.save(entity));
     }
 
     public ProductSubCategoryGroupDto updateSubGroup(Long id, ProductSubCategoryGroupRequest request) {
         ProductSubCategoryGroup entity = findSubGroupById(id);
         entity.setGroupName(request.groupName());
+        entity.setIcon(request.icon());
         entity.setParentGroup(findGroupById(request.parentGroupId()));
         return ProductSubCategoryGroupDto.fromEntity(subCategoryGroupRepository.save(entity));
     }

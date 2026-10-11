@@ -7,6 +7,7 @@ import java.util.List;
 public record ProductCategoryGroupDto(
         Long id,
         String groupName,
+        String icon,
         List<ProductSubCategoryGroupDto> subGroups,
         List<ProductCategoryDto> categories) {
 
@@ -17,7 +18,7 @@ public record ProductCategoryGroupDto(
         List<ProductCategoryDto> categories = entity.getCategories().stream()
                 .map(ProductCategoryDto::fromEntity)
                 .toList();
-        return new ProductCategoryGroupDto(entity.getId(), entity.getGroupName(), subGroups, categories);
+        return new ProductCategoryGroupDto(entity.getId(), entity.getGroupName(), entity.getIcon(), subGroups, categories);
     }
 
     public static List<ProductCategoryGroupDto> fromEntities(List<ProductCategoryGroup> all) {
